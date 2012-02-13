@@ -1,0 +1,30 @@
+{
+	"author": "Matthew Mirande <mattmirande@cheezburger.com>",
+	"name": "Plim",
+	"description": "Simple sandbox to support static file serving as well as LESS & AMD js compilation",
+	"version": "0.0.2",
+	"bin": {
+		"plim": "./plim.js"
+	},
+	"scripts": {
+		"start": "node plim.js"
+	},
+	"files": [
+		"plims.js"
+	],
+	"repository": {
+		"url": ""
+	},
+	"main": "app.js",
+	"engines": {
+		"node": "0.6",
+		"npm" : "1"
+	},
+	"dependencies": {
+		"requirejs" : "1.0.4",
+		"commander" : "0.5.x",
+		"express" : "2.x.x",
+		"less" : "1.x.x"
+	},
+	"devDependencies": {}
+}
