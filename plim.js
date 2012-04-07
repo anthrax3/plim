@@ -4,181 +4,185 @@
 // TODO - some kind of unit test runner (plim -t <runs all known unit tests>)
 // TODO - add some kind of documentation generator (JSDoc? LessDoC?)
 
-var fs = require( 'fs' ),
-	deps = [ 'commander', 'less', 'requirejs', 'express' ],
-	prog = {},
-	options = {
-		port: 3000,
-		jsBuildCfg: 'js/build.js',
-		lessSrc: 'css/',
-		lessOut: 'css/',
-		lessMain: 'css/main.less'
-	},
-	log, install, init, start, optimize, npm, rjs, express, app;
+(function(){
+    "use strict";
 
-log = function( msg, showName ){
-	msg = msg || '';
-	showName = typeof showName === 'undefined' ? true : showName;
+    var fs = require( 'fs' ),
+        deps = [ 'commander', 'less', 'requirejs', 'express' ],
+        prog = {},
+        options = {
+            port: 3000,
+            jsBuildCfg: 'js/build.js',
+            lessSrc: 'css/',
+            lessOut: 'css/',
+            lessMain: 'css/main.less'
+        },
+        log, install, init, start, optimize, npm, rjs, express, less, app;
 
-	if ( showName === true ){
-		console.log(
-			'    ___  __   _____       \n' +
-			'   / _ \\/ /   \\_   \\/\\/\\  \n' +
-			'  / /_)/ /     / /\\/    \\ \n' +
-			' / ___/ /___/\\/ /_/ /\\/\\ \\\n' +
-			' \\/   \\____/\\____/\\/    \\/\n'
-		);
-	}
+    log = function( msg, showName ){
+        msg = msg || '';
+        showName = typeof showName === 'undefined' ? true : showName;
 
-	console.log( msg );
-}
+        if ( showName === true ){
+            console.log(
+                '    ___  __   _____       \n' +
+                '   / _ \\/ /   \\_   \\/\\/\\  \n' +
+                '  / /_)/ /     / /\\/    \\ \n' +
+                ' / ___/ /___/\\/ /_/ /\\/\\ \\\n' +
+                ' \\/   \\____/\\____/\\/    \\/\n'
+            );
+        }
 
-// command-line interface
-init = function(){
-	prog = require( 'commander' );
-	prog
-		.version( '0.0.2' )
-		.option( '-s, --setup', 'Setup and install dependencies' )
-		.option( '-p, --port <port>', 'Set server port (default is 3000)', parseInt, 3000 )
-		.option( '-P, --production', 'Run in production mode (uses optimized resource files)' )
-		.option( '-o, --optimize [build file]', 'Run rjs AMD js optimization (default build file is "js/build.js")' )
-		.option( '-l, --less [value]', 'Set "main" less file to target when forcing less recompilation' );
+        console.log( msg );
+    };
 
-	prog.on( '--help', function(){
-		log();
-	});
+    // command-line interface
+    init = function(){
+        prog = require( 'commander' );
+        prog
+            .version( '0.0.2' )
+            .option( '-s, --setup', 'Setup and install dependencies' )
+            .option( '-p, --port <port>', 'Set server port (default is 3000)', parseInt, 3000 )
+            .option( '-P, --production', 'Run in production mode (uses optimized resource files)' )
+            .option( '-o, --optimize [build file]', 'Run rjs AMD js optimization (default build file is "js/build.js")' )
+            .option( '-l, --less [value]', 'Set "main" less file to target when forcing less recompilation' );
 
-	prog.parse( process.argv );
+        prog.on( '--help', function(){
+            log();
+        });
 
-	if ( typeof prog.less === 'string' ){
-		options.lessMain = prog.less;
-	}
+        prog.parse( process.argv );
 
-	if ( prog.optimize ){
-		optimize( typeof prog.optimize === 'boolean' ? 'js/build.js' : prog.optimize );
-		process.exit();
-	}
+        if ( typeof prog.less === 'string' ){
+            options.lessMain = prog.less;
+        }
 
-	if ( prog.setup ){
-		install( deps );
-	} else {
-		start( prog.port );
-	}
-};
+        if ( prog.optimize ){
+            optimize( typeof prog.optimize === 'boolean' ? 'js/build.js' : prog.optimize );
+            process.exit();
+        }
 
-// config & start server
-start = function( port ){
-	var lessCfg = {
-		compress: false,
-		force: true //meh... still no worky probably need this to land: https://github.com/cloudhead/less.js/pull/503
-	};
+        if ( prog.setup ){
+            install( deps );
+        } else {
+            start( prog.port );
+        }
+    };
 
-	less = require( 'less' );
-	express = require( 'express' );
-	app = express.createServer();
+    // config & start server
+    start = function( port ){
+        var lessCfg = {
+            compress: false,
+            force: true //meh... still no worky probably need this to land: https://github.com/cloudhead/less.js/pull/503
+        };
 
-	// override native compiler to enable LESS configs
-	express.compiler.compilers.less.compile = function ( str, fn ) {
-		try {
-			less.render( str, lessCfg, fn );
-		} catch ( err ) {
-			fn( err );
-		}
-	};
+        less = require( 'less' );
+        express = require( 'express' );
+        app = express.createServer();
 
-	app.configure(function(){
-		if ( prog.production ){
-			lessCfg.compress = true;
-			//app.use( express.compress() ); // not until connect 2.0 :-(
-			app.use(function( req, res, next ){
-				if ( req.url.indexOf( '/js/' ) > -1 ){
-					req.url = req.url.replace( '/js/', '/js-built/' );
-				}
-				next();
-			});
-		} else {
-			app.use( function( req, res, next ){
-				fs.utimesSync( options.lessMain, new Date(), new Date() );
-				next();
-			});
-		}
-		app.use( express.compiler({
-				src: __dirname + '/',
-				enable: [ 'less' ]
-			})
-		);
-		app.use( express.static( __dirname + '/', { maxAge: 0 } ) );
-		app.use( express.errorHandler({
-				dumpExceptions: true,
-				showStack: true
-			})
-		);
-	});
+        // override native compiler to enable LESS configs
+        express.compiler.compilers.less.compile = function ( str, fn ) {
+            try {
+                less.render( str, lessCfg, fn );
+            } catch ( err ) {
+                fn( err );
+            }
+        };
 
-	log( '::::::::: server listenting on port ' + port + ( prog.production ? ' [prod mode]' : '' ) + ' (ctrl+c to exit)' );
-	app.listen( port );
-};
+        app.configure(function(){
+            if ( prog.production ){
+                lessCfg.compress = true;
+                //app.use( express.compress() ); // not until connect 2.0 :-(
+                app.use(function( req, res, next ){
+                    if ( req.url.indexOf( '/js/' ) > -1 ){
+                        req.url = req.url.replace( '/js/', '/js-built/' );
+                    }
+                    next();
+                });
+            } else {
+                app.use( function( req, res, next ){
+                    fs.utimesSync( options.lessMain, new Date(), new Date() );
+                    next();
+                });
+            }
+            app.use( express.compiler({
+                    src: __dirname + '/',
+                    enable: [ 'less' ]
+                })
+            );
+            app.use( express.static( __dirname + '/', { maxAge: 0 } ) );
+            app.use( express.errorHandler({
+                    dumpExceptions: true,
+                    showStack: true
+                })
+            );
+        });
 
-optimize = function( cfgFilePath ){
-	log( '::::::::: optimizing AMD JS files' );
+        log( '::::::::: server listenting on port ' + port + ( prog.production ? ' [prod mode]' : '' ) + ' (ctrl+c to exit)' );
+        app.listen( port );
+    };
 
-	var config =  eval( fs.readFileSync( cfgFilePath, 'utf8' ) ); // oh my!
+    optimize = function( cfgFilePath ){
+        log( '::::::::: optimizing AMD JS files' );
 
-	rjs = require( 'requirejs' );
+        var config =  eval( fs.readFileSync( cfgFilePath, 'utf8' ) ); // oh my!
 
-	try {
-		rjs.optimize( config, function( data ){
-			log( data, false );
-		});
-	} catch( err ){
-		log( err );
-	}
-};
+        rjs = require( 'requirejs' );
 
-install = function( deps ){
-	var depsToInstall = [];
+        try {
+            rjs.optimize( config, function( data ){
+                log( data, false );
+            });
+        } catch( err ){
+            log( err );
+        }
+    };
 
-	npm = require( 'npm' );
+    install = function( deps ){
+        var depsToInstall = [];
 
-	npm.once( 'loaded', function(){
-		for ( var i = 0; i < deps.length; i = i + 1 ){
-			try {
-				require.resolve( deps[ i ] );
-			} catch ( e ){
-				depsToInstall.push( deps[ i ] );
-			}
-		};
+        npm = require( 'npm' );
 
-		if ( depsToInstall.length ){
-			npm.emit( 'install' );
-		} else {
-			log( '::::::::: all dependencies installed!' );
-		}
-	});
+        npm.once( 'loaded', function(){
+            for ( var i = 0; i < deps.length; i = i + 1 ){
+                try {
+                    require.resolve( deps[ i ] );
+                } catch ( e ){
+                    depsToInstall.push( deps[ i ] );
+                }
+            }
 
-	npm.once( 'install', function(){
-		log( '::::::::: installing deps: ' + depsToInstall.join( ', ' ) );
-		npm.commands.install( depsToInstall, function ( err, data ) {
-			if ( err ){
-				log( err, false );
-			}
-			// module installs succeeded, start cmd-line
-			init();
-		});
-	});
+            if ( depsToInstall.length ){
+                npm.emit( 'install' );
+            } else {
+                log( '::::::::: all dependencies installed!' );
+            }
+        });
 
-	npm.load( {}, function( err ){
-		if ( err ){
-			log( err, false );
-		}
-		npm.emit( 'loaded' );
-	});
-};
+        npm.once( 'install', function(){
+            log( '::::::::: installing deps: ' + depsToInstall.join( ', ' ) );
+            npm.commands.install( depsToInstall, function ( err, data ) {
+                if ( err ){
+                    log( err, false );
+                }
+                // module installs succeeded, start cmd-line
+                init();
+            });
+        });
+
+        npm.load( {}, function( err ){
+            if ( err ){
+                log( err, false );
+            }
+            npm.emit( 'loaded' );
+        });
+    };
 
 
-// initialize app
-try {
-	init();
-} catch( err ){
-	install( deps );
-}
+    // initialize app
+    try {
+        init();
+    } catch( err ){
+        install( deps );
+    }
+})();
