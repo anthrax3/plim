@@ -2,7 +2,7 @@
 	"author": "Matthew Mirande <mattmirande@cheezburger.com>",
 	"name": "Plim",
 	"description": "Simple sandbox to support static file serving as well as LESS & AMD js compilation",
-	"version": "0.0.2",
+	"version": "0.0.5",
 	"bin": {
 		"plim": "./plim.js"
 	},
