@@ -11,7 +11,7 @@
     var fs = require( 'fs' ),
         path = require('path'),
         deps = [ 'commander', 'less', 'requirejs', 'express' ],
-        prog = {},
+        cli = {},
         options = {
             port: 3000,
             baseUrl: process.cwd(),
@@ -20,7 +20,7 @@
             lessOut: 'css/',
             lessMain: 'css/main.less'
         },
-        npm, rjs, express, less, app;
+        npm, rjs, express, less, server;
 
     var exists = function() {
         var obj = fs.existsSync ? fs : path;
@@ -80,8 +80,8 @@
 
     // enable command-line interface & setup configs
     var init = function(){
-        prog = require( 'commander' );
-        prog
+        cli = require( 'commander' );
+        cli
             .version( '0.0.5' )
             .option( '-s, --setup', 'Setup and install dependencies' )
             .option( '-p, --port <port>', 'Set server port (default is 3000)', parseInt, 3000 )
@@ -97,25 +97,25 @@
 
         //process.exit();
 
-        prog.on( '--help', function(){
+        cli.on( '--help', function(){
             log();
         });
 
-        prog.parse( process.argv );
+        cli.parse( process.argv );
 
-        if ( typeof prog.less === 'string' ){
-            options.lessMain = prog.less;
+        if ( typeof cli.less === 'string' ){
+            options.lessMain = cli.less;
         }
 
-        if ( prog.optimizeJS ){
-            optimizeJS( typeof prog.optimizeJS === 'boolean' ? 'js/build.js' : prog.optimizeJS );
+        if ( cli.optimizeJS ){
+            optimizeJS( typeof cli.optimizeJS === 'boolean' ? 'js/build.js' : cli.optimizeJS );
             process.exit();
         }
 
-        if ( prog.setup ){
+        if ( cli.setup ){
             install( deps );
         } else {
-            start( prog.port );
+            start( cli.port );
         }
     };
 
@@ -128,7 +128,7 @@
 
         less = require( 'less' );
         express = require( 'express' );
-        app = express.createServer();
+        server = express.createServer();
 
         // override native compiler to enable LESS configs
         express.compiler.compilers.less.compile = function ( str, fn ) {
@@ -139,37 +139,37 @@
             }
         };
 
-        app.configure(function(){
-            if ( prog.production ){
+        server.configure(function(){
+            if ( cli.production ){
                 lessCfg.compress = true;
                 //app.use( express.compress() ); // not until connect 2.0 :-(
-                app.use(function( req, res, next ){
+                server.use(function( req, res, next ){
                     if ( req.url.indexOf( '/js/' ) > -1 ){
                         req.url = req.url.replace( '/js/', '/js-built/' );
                     }
                     next();
                 });
             } else {
-                app.use( function( req, res, next ){
+                server.use( function( req, res, next ){
                     fs.utimesSync( path.join( options.baseUrl, options.lessMain ), new Date(), new Date() );
                     next();
                 });
             }
-            app.use( express.compiler({
+            server.use( express.compiler({
                     src: path.normalize( options.baseUrl ),
                     enable: [ 'less' ]
                 })
             );
-            app.use( express.static( path.normalize( options.baseUrl ), { maxAge: 0 } ) );
-            app.use( express.errorHandler({
+            server.use( express.static( path.normalize( options.baseUrl ), { maxAge: 0 } ) );
+            server.use( express.errorHandler({
                     dumpExceptions: true,
                     showStack: true
                 })
             );
         });
 
-        log( '::::::::: server listenting on port ' + port + ( prog.production ? ' [prod mode]' : '' ) + ' (ctrl+c to exit)' );
-        app.listen( port );
+        log( '::::::::: server listenting on port ' + port + ( cli.production ? ' [prod mode]' : '' ) + ' (ctrl+c to exit)' );
+        server.listen( port );
     };
 
     var optimizeJS = function( cfgFilePath ){
