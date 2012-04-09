@@ -15,6 +15,8 @@
         options = {
             port: 3000,
             baseUrl: process.cwd(),
+            isProduction: false,
+            optimizeJS: false,
             jsBuildCfg: 'js/build.js',
             lessSrc: 'css/',
             lessOut: 'css/',
@@ -89,38 +91,38 @@
             .option( '-o, --optimizeJS [build file]', 'Run rjs AMD js optimization (default build file is "js/build.js")' )
             .option( '-l, --less [value]', 'Set "main" less file to target when forcing less recompilation' );
 
-        options = loadConfig( findConfig() );
-
-        console.log( options );
-        console.log( path.join( options.baseUrl, options.lessMain ) );
-        console.log(  path.join( options.baseUrl, options.lessSrc ) );
-
-        //process.exit();
-
         cli.on( '--help', function(){
             log();
         });
 
         cli.parse( process.argv );
 
-        if ( typeof cli.less === 'string' ){
-            options.lessMain = cli.less;
-        }
+        options = loadConfig( findConfig() ); //falls back to original options object :-/
+        options.isProduction = cli.production ? true : options.isProduction;
+        options.lessMain = typeof cli.less === 'string' ? cli.less : options.lessMain;
+        options.optimizeJS = cli.optimizeJS ? true : options.optimizeJS;
+        options.jsBuildCfg = typeof cli.optimizeJS === 'string' ? cli.optimizeJS : options.jsBuildCfg;
+        options.port = cli.port ? cli.port : options.port;
 
-        if ( cli.optimizeJS ){
-            optimizeJS( typeof cli.optimizeJS === 'boolean' ? 'js/build.js' : cli.optimizeJS );
+        console.log( options );
+        console.log( 'options.lessSrc : ' + path.join( options.baseUrl, options.lessSrc ) );
+        console.log( 'options.lessMain : ' + path.join( options.baseUrl, options.lessMain ) );
+        console.log( 'options.jsBuildCfg : ' + path.join( options.baseUrl, options.jsBuildCfg ) );
+
+        if ( options.optimizeJS ){
+            optimizeJS( path.join( options.baseUrl, options.jsBuildCfg ) );
             process.exit();
         }
 
         if ( cli.setup ){
             install( deps );
         } else {
-            start( cli.port );
+            start();
         }
     };
 
     // config & start server
-    var start = function( port ){
+    var start = function(){
         var lessCfg = {
             compress: false,
             force: true //meh... still no worky probably need this to land: https://github.com/cloudhead/less.js/pull/503
@@ -140,7 +142,7 @@
         };
 
         server.configure(function(){
-            if ( cli.production ){
+            if ( options.isProduction ){
                 lessCfg.compress = true;
                 //app.use( express.compress() ); // not until connect 2.0 :-(
                 server.use(function( req, res, next ){
@@ -168,8 +170,8 @@
             );
         });
 
-        log( '::::::::: server listenting on port ' + port + ( cli.production ? ' [prod mode]' : '' ) + ' (ctrl+c to exit)' );
-        server.listen( port );
+        log( '::::::::: server listenting on port ' + options.port + ( options.isProduction ? ' [prod mode]' : '' ) + ' (ctrl+c to exit)' );
+        server.listen( options.port );
     };
 
     var optimizeJS = function( cfgFilePath ){
