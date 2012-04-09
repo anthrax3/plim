@@ -14,7 +14,7 @@
         cli = {},
         options = {
             port: 3000,
-            baseUrl: process.cwd(),
+            basePath: process.cwd(),
             isProduction: false,
             optimizeJS: false,
             jsBuildCfg: 'js/build.js',
@@ -105,12 +105,12 @@
         options.port = cli.port ? cli.port : options.port;
 
         console.log( options );
-        console.log( 'options.lessSrc : ' + path.join( options.baseUrl, options.lessSrc ) );
-        console.log( 'options.lessMain : ' + path.join( options.baseUrl, options.lessMain ) );
-        console.log( 'options.jsBuildCfg : ' + path.join( options.baseUrl, options.jsBuildCfg ) );
+        console.log( 'options.lessSrc : ' + path.join( options.basePath, options.lessSrc ) );
+        console.log( 'options.lessMain : ' + path.join( options.basePath, options.lessMain ) );
+        console.log( 'options.jsBuildCfg : ' + path.join( options.basePath, options.jsBuildCfg ) );
 
         if ( options.optimizeJS ){
-            optimizeJS( path.join( options.baseUrl, options.jsBuildCfg ) );
+            optimizeJS( path.join( options.basePath, options.jsBuildCfg ) );
             process.exit();
         }
 
@@ -119,7 +119,7 @@
         } else {
             start(
                 options.port,
-                options.baseUrl,
+                options.basePath,
                 options.isProduction,
                 options.lessMain,
                 options.lessSrc
@@ -128,7 +128,7 @@
     };
 
     // config & start server
-    var start = function( port, baseUrl, isProd, lessMain, lessSrc ){
+    var start = function( port, root, isProd, lessMain, lessSrc ){
         var lessCfg = {
             compress: false,
             force: true //meh... still no worky probably need this to land: https://github.com/cloudhead/less.js/pull/503
@@ -159,16 +159,16 @@
                 });
             } else {
                 server.use( function( req, res, next ){
-                    fs.utimesSync( path.join( baseUrl, lessMain ), new Date(), new Date() );
+                    fs.utimesSync( path.join( root, lessMain ), new Date(), new Date() );
                     next();
                 });
             }
             server.use( express.compiler({
-                    src: path.normalize( baseUrl ),
+                    src: path.normalize( root ),
                     enable: [ 'less' ]
                 })
             );
-            server.use( express.static( path.normalize( baseUrl ), { maxAge: 0 } ) );
+            server.use( express.static( path.normalize( root ), { maxAge: 0 } ) );
             server.use( express.errorHandler({
                     dumpExceptions: true,
                     showStack: true
