@@ -117,12 +117,18 @@
         if ( cli.setup ){
             install( deps );
         } else {
-            start();
+            start(
+                options.port,
+                options.baseUrl,
+                options.isProduction,
+                options.lessMain,
+                options.lessSrc
+            );
         }
     };
 
     // config & start server
-    var start = function(){
+    var start = function( port, baseUrl, isProd, lessMain, lessSrc ){
         var lessCfg = {
             compress: false,
             force: true //meh... still no worky probably need this to land: https://github.com/cloudhead/less.js/pull/503
@@ -142,7 +148,7 @@
         };
 
         server.configure(function(){
-            if ( options.isProduction ){
+            if ( isProd ){
                 lessCfg.compress = true;
                 //app.use( express.compress() ); // not until connect 2.0 :-(
                 server.use(function( req, res, next ){
@@ -153,16 +159,16 @@
                 });
             } else {
                 server.use( function( req, res, next ){
-                    fs.utimesSync( path.join( options.baseUrl, options.lessMain ), new Date(), new Date() );
+                    fs.utimesSync( path.join( baseUrl, lessMain ), new Date(), new Date() );
                     next();
                 });
             }
             server.use( express.compiler({
-                    src: path.normalize( options.baseUrl ),
+                    src: path.normalize( baseUrl ),
                     enable: [ 'less' ]
                 })
             );
-            server.use( express.static( path.normalize( options.baseUrl ), { maxAge: 0 } ) );
+            server.use( express.static( path.normalize( baseUrl ), { maxAge: 0 } ) );
             server.use( express.errorHandler({
                     dumpExceptions: true,
                     showStack: true
@@ -170,8 +176,8 @@
             );
         });
 
-        log( '::::::::: server listenting on port ' + options.port + ( options.isProduction ? ' [prod mode]' : '' ) + ' (ctrl+c to exit)' );
-        server.listen( options.port );
+        log( '::::::::: server listenting on port ' + port + ( isProd ? ' [prod mode]' : '' ) + ' (ctrl+c to exit)' );
+        server.listen( port );
     };
 
     var optimizeJS = function( cfgFilePath ){
