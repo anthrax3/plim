@@ -4,6 +4,7 @@
 // TODO - some kind of unit test runner (plim -t <runs all known unit tests>)
 // TODO - add some kind of documentation generator (JSDoc? LessDoC?)
 // TODO - add a 'setup' routine where standard dirs & files (css, js, index.html) are created based on user input
+// TODO - auto-refresh browser based on file save
 
 (function(){
     "use strict";
@@ -96,6 +97,7 @@
         });
 
         cli.parse( process.argv );
+        console.log( options );
 
         options = loadConfig( findConfig() ); //falls back to original options object :-/
         options.isProduction = cli.production ? true : options.isProduction;
@@ -241,6 +243,7 @@
     try {
         init();
     } catch( err ){
+        log( err, false );
         install( deps );
     }
-})();
+}());
