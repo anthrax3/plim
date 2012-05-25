@@ -11,7 +11,6 @@
 
     var fs = require( 'fs' ),
         path = require('path'),
-        deps = [ 'commander', 'less', 'requirejs', 'express' ],
         cli = {},
         options = {
             port: 3000,
@@ -23,7 +22,25 @@
             lessOut: 'css/',
             lessMain: 'css/main.less'
         },
-        npm, rjs, express, less, server;
+        rjs, express, less, server;
+
+    // utils //////////////////////////////////////////////////////////////////
+    Object.defineProperty(Object.prototype, 'extend', {
+        enumerable: false,
+        value: function( from ) {
+            var props = Object.getOwnPropertyNames( from ),
+                dest = this;
+
+            props.forEach(function( name ) {
+                if ( name in dest ) {
+                    var destination = Object.getOwnPropertyDescriptor( from, name );
+                    Object.defineProperty( dest, name, destination );
+                }
+            });
+
+            return this;
+        }
+    });
 
     var exists = function() {
         var obj = fs.existsSync ? fs : path;
@@ -86,7 +103,6 @@
         cli = require( 'commander' );
         cli
             .version( '0.0.5' )
-            .option( '-s, --setup', 'Setup and install dependencies' )
             .option( '-p, --port <port>', 'Set server port (default is 3000)', parseInt, 3000 )
             .option( '-P, --production', 'Run in production mode (uses optimized resource files)' )
             .option( '-o, --optimizeJS [build file]', 'Run rjs AMD js optimization (default build file is "js/build.js")' )
@@ -97,16 +113,16 @@
         });
 
         cli.parse( process.argv );
-        console.log( options );
 
-        options = loadConfig( findConfig() ); //falls back to original options object :-/
+        options.extend( loadConfig( findConfig() ) );
+
         options.isProduction = cli.production ? true : options.isProduction;
         options.lessMain = typeof cli.less === 'string' ? cli.less : options.lessMain;
         options.optimizeJS = cli.optimizeJS ? true : options.optimizeJS;
         options.jsBuildCfg = typeof cli.optimizeJS === 'string' ? cli.optimizeJS : options.jsBuildCfg;
         options.port = cli.port ? cli.port : options.port;
 
-        console.log( options );
+        console.log( 'options.basePath : ' + path.join( options.basePath ) );
         console.log( 'options.lessSrc : ' + path.join( options.basePath, options.lessSrc ) );
         console.log( 'options.lessMain : ' + path.join( options.basePath, options.lessMain ) );
         console.log( 'options.jsBuildCfg : ' + path.join( options.basePath, options.jsBuildCfg ) );
@@ -116,17 +132,13 @@
             process.exit();
         }
 
-        if ( cli.setup ){
-            install( deps );
-        } else {
-            start(
-                options.port,
-                options.basePath,
-                options.isProduction,
-                options.lessMain,
-                options.lessSrc
-            );
-        }
+        start(
+            options.port,
+            options.basePath,
+            options.isProduction,
+            options.lessMain,
+            options.lessSrc
+        );
     };
 
     // config & start server
@@ -198,52 +210,10 @@
         }
     };
 
-    var install = function( deps ){
-        var depsToInstall = [];
-
-        npm = require( 'npm' );
-
-        npm.once( 'loaded', function(){
-            for ( var i = 0; i < deps.length; i = i + 1 ){
-                try {
-                    require.resolve( deps[ i ] );
-                } catch ( e ){
-                    depsToInstall.push( deps[ i ] );
-                }
-            }
-
-            if ( depsToInstall.length ){
-                npm.emit( 'install' );
-            } else {
-                log( '::::::::: all dependencies installed!' );
-            }
-        });
-
-        npm.once( 'install', function(){
-            log( '::::::::: installing deps: ' + depsToInstall.join( ', ' ) );
-            npm.commands.install( depsToInstall, function ( err, data ) {
-                if ( err ){
-                    log( err, false );
-                }
-                // module installs succeeded, start cmd-line
-                init();
-            });
-        });
-
-        npm.load( {}, function( err ){
-            if ( err ){
-                log( err, false );
-            }
-            npm.emit( 'loaded' );
-        });
-    };
-
-
     // initialize app
     try {
         init();
     } catch( err ){
         log( err, false );
-        install( deps );
     }
 }());
