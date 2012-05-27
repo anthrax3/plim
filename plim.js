@@ -63,7 +63,10 @@ var startServer = function( port, root, isProd, lessMain, lessSrc ){
             });
         } else {
             server.use( function( req, res, next ){
-                fs.utimesSync( path.join( root, lessMain ), new Date(), new Date() );
+                req.url = req.url.replace( '/js-built/', '/js/' );
+                if ( file.exists( path.join( root, lessMain ) ) ) {
+                    fs.utimesSync( path.join( root, lessMain ), new Date(), new Date() );
+                }
                 next();
             });
         }
@@ -118,12 +121,13 @@ options.optimizeJS = cli.optimizeJS ? true : options.optimizeJS;
 options.jsBuildCfg = typeof cli.optimizeJS === 'string' ? cli.optimizeJS : options.jsBuildCfg;
 options.port = cli.port ? cli.port : options.port;
 
+console.log( 'options.isProduction : ' + ( options.isProduction ? 'true' : 'false' ) );
 console.log( 'options.port : ' + options.port );
 console.log( 'options.basePath : ' + path.join( options.basePath ) );
 console.log( 'options.lessSrc : ' + path.join( options.basePath, options.lessSrc ) );
 console.log( 'options.lessMain : ' + path.join( options.basePath, options.lessMain ) );
 console.log( 'options.jsBuildCfg : ' + path.join( options.basePath, options.jsBuildCfg ) );
-
+console.log( options );
 if ( options.optimizeJS ){
     optimizeJS( path.join( options.basePath, options.jsBuildCfg ) );
     process.exit();
