@@ -101,19 +101,14 @@ var optimizeJS = function( cfgFilePath ){
     }
 };
 
-cli = require( 'commander' );
 cli
     .version( '0.0.5' )
     .option( '-p, --port <port>', 'Set server port (default is 3000)' )
     .option( '-P, --production', 'Run in production mode (uses optimized resource files)' )
     .option( '-o, --optimizeJS [build file]', 'Run rjs AMD js optimization (default build file is "js/build.js")' )
-    .option( '-l, --less [value]', 'Set "main" less file to target when forcing less recompilation' );
-
-cli.on( '--help', function(){
-    log();
-});
-
-cli.parse( process.argv );
+    .option( '-l, --less [value]', 'Set "main" less file to target when forcing less recompilation' )
+    .on( '--help', function(){ log(); })
+    .parse( process.argv );
 
 options.isProduction = cli.production ? true : options.isProduction;
 options.lessMain = typeof cli.less === 'string' ? cli.less : options.lessMain;
@@ -127,7 +122,7 @@ console.log( 'options.basePath : ' + path.join( options.basePath ) );
 console.log( 'options.lessSrc : ' + path.join( options.basePath, options.lessSrc ) );
 console.log( 'options.lessMain : ' + path.join( options.basePath, options.lessMain ) );
 console.log( 'options.jsBuildCfg : ' + path.join( options.basePath, options.jsBuildCfg ) );
-console.log( options );
+
 if ( options.optimizeJS ){
     optimizeJS( path.join( options.basePath, options.jsBuildCfg ) );
     process.exit();
