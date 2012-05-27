@@ -75,7 +75,7 @@ var startServer = function( port, root, isProd, lessMain, lessSrc ){
                 enable: [ 'less' ]
             })
         );
-        server.use( express.static( path.normalize( root ), { maxAge: 0 } ) );
+        server.use( express['static']( path.normalize( root ), { maxAge: 0 } ) );
         server.use( express.errorHandler({
                 dumpExceptions: true,
                 showStack: true
