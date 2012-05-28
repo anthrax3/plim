@@ -15,7 +15,8 @@ var fs = require( 'fs' ),
     express = require( 'express' ),
     rjs = require( 'requirejs' ),
     file = require( './src/file' ),
-    options = require( './src/options' ).getConfigs();
+    config = require( './src/config' ),
+    options = config.get();
 
 
 var log = function( msg, showName ){
@@ -41,6 +42,8 @@ var startServer = function( port, root, isProd, lessMain, lessSrc ){
             compress: false,
             force: true //meh... still no worky probably need this to land: https://github.com/cloudhead/less.js/pull/503
         };
+
+    root = path.resolve( root );
 
     // override native compiler to enable LESS configs
     express.compiler.compilers.less.compile = function ( str, fn ) {
@@ -103,6 +106,7 @@ var optimizeJS = function( cfgFilePath ){
 
 cli
     .version( '0.0.5' )
+    .option( '-s, --setup', 'Setup you plim.config file' )
     .option( '-p, --port <port>', 'Set server port (default is 3000)' )
     .option( '-P, --production', 'Run in production mode (uses optimized resource files)' )
     .option( '-o, --optimizeJS [build file]', 'Run rjs AMD js optimization (default build file is "js/build.js")' )
@@ -116,22 +120,39 @@ options.optimizeJS = cli.optimizeJS ? true : options.optimizeJS;
 options.jsBuildCfg = typeof cli.optimizeJS === 'string' ? cli.optimizeJS : options.jsBuildCfg;
 options.port = cli.port ? cli.port : options.port;
 
-console.log( 'options.isProduction : ' + ( options.isProduction ? 'true' : 'false' ) );
-console.log( 'options.port : ' + options.port );
-console.log( 'options.basePath : ' + path.join( options.basePath ) );
-console.log( 'options.lessSrc : ' + path.join( options.basePath, options.lessSrc ) );
-console.log( 'options.lessMain : ' + path.join( options.basePath, options.lessMain ) );
-console.log( 'options.jsBuildCfg : ' + path.join( options.basePath, options.jsBuildCfg ) );
-
 if ( options.optimizeJS ){
     optimizeJS( path.join( options.basePath, options.jsBuildCfg ) );
     process.exit();
 }
 
-startServer(
-    options.port,
-    options.basePath,
-    options.isProduction,
-    options.lessMain,
-    options.lessSrc
-);
+if ( cli.setup ) {
+    log( '::::::::: Setup Your Plim Configs' );
+    cli.prompt({
+        port: ':: Port to serve from?: ',
+        isProduction: ':: Run in production mode?: ',
+        optimizeJS: ':: Optimize javascript on startup?: ',
+        basePath: ':: "basePath" - Top level directory for you project?: ',
+        jsBuildCfg: ':: Relative to "basePath", where is your js build config file?: ',
+        lessSrc: ':: Relative to "basePath", what directory contians your {LESS} source files?: ',
+        lessOut: ':: Relative to "basePath", where should css output by {LESS} compilation be stored?: ',
+        lessMain: ':: Relative to "basePath", where is your main.less file?: '
+    }, function( cfg ){
+        log( '::::::::: Saving Configs', false );
+        config.writeFile( config.validateInput( cfg ) );
+    });
+} else {
+    console.log( ':: options.isProduction : ' + ( options.isProduction ? 'true' : 'false' ) );
+    console.log( ':: options.port : ' + options.port );
+    console.log( ':: options.basePath : ' + path.join( options.basePath ) );
+    console.log( ':: options.lessSrc : ' + path.join( options.basePath, options.lessSrc ) );
+    console.log( ':: options.lessMain : ' + path.join( options.basePath, options.lessMain ) );
+    console.log( ':: options.jsBuildCfg : ' + path.join( options.basePath, options.jsBuildCfg ) );
+
+    startServer(
+        options.port,
+        options.basePath,
+        options.isProduction,
+        options.lessMain,
+        options.lessSrc
+    );
+}
