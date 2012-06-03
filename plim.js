@@ -2,6 +2,7 @@
 
 // TODO - enable on the fly rjs optimization via connect middleware
 // TODO - some kind of unit test runner (plim -t <runs all known unit tests>)
+// TODO - a way to download and update external js deps (e.g. jquery)
 // TODO - add some kind of documentation generator (JSDoc? LessDoC?)
 // TODO - add a 'setup' routine where standard dirs & files (css, js, index.html) are created based on user input
 // TODO - auto-refresh browser based on file save
@@ -21,7 +22,6 @@ var fs = require( 'fs' ),
 
 var log = function( msg, showName ){
     msg = msg || '';
-    showName = typeof showName === 'undefined' ? true : showName;
 
     if ( showName === true ){
         console.log(
@@ -50,7 +50,9 @@ var startServer = function( port, root, isProd, lessMain, lessSrc ){
         try {
             less.render( str, lessCfg, fn );
         } catch ( err ) {
-            fn( err );
+            log( err );
+            log( '::::::::: error during {LESS} compilation :-(' );
+            process.exit();
         }
     };
 
@@ -86,21 +88,27 @@ var startServer = function( port, root, isProd, lessMain, lessSrc ){
         );
     });
 
-    log( '::::::::: server listenting on port ' + port + ( isProd ? ' [prod mode]' : '' ) + ' (ctrl+c to exit)' );
+    log( '::::::::: server listenting on port ' + port + ( isProd ? ' [prod mode]' : '' ) + ' (ctrl+c to exit)', true );
+    if ( parseInt( port, 10 ) < 1024  ){
+        log( '::::::::: warning: port ' + port + ' requires root' );
+    }
     server.listen( port );
 };
 
 var optimizeJS = function( cfgFilePath ){
-    log( '::::::::: optimizing AMD JS files' );
+    var buildCfg;
 
-    var buildCfg = eval( fs.readFileSync( cfgFilePath, 'utf8' ) ); // oh my!
+    log( '::::::::: optimizing AMD JS files', true );
 
     try {
+        buildCfg = eval( fs.readFileSync( cfgFilePath, 'utf8' ) ); // oh my!
         rjs.optimize( buildCfg, function( data ){
             log( data, false );
         });
     } catch( err ){
         log( err );
+        log( '::::::::: error during JS optimization :-(' );
+        process.exit();
     }
 };
 
@@ -111,7 +119,7 @@ cli
     .option( '-P, --production', 'Run in production mode (uses optimized resource files)' )
     .option( '-o, --optimizeJS [build file]', 'Run rjs AMD js optimization (default build file is "js/build.js")' )
     .option( '-l, --less [value]', 'Set "main" less file to target when forcing less recompilation' )
-    .on( '--help', function(){ log(); })
+    .on( '--help', function(){ log('', true); })
     .parse( process.argv );
 
 options.isProduction = cli.production ? true : options.isProduction;
@@ -126,7 +134,7 @@ if ( options.optimizeJS ){
 }
 
 if ( cli.setup ) {
-    log( '::::::::: Setup Your Plim Configs' );
+    log( '::::::::: Setup Your Plim Configs (ctrl+c to exit)', true );
     cli.prompt({
         port: ':: Port to serve from?: ',
         isProduction: ':: Run in production mode?: ',
@@ -137,16 +145,17 @@ if ( cli.setup ) {
         lessOut: ':: Relative to "basePath", where should css output by {LESS} compilation be stored?: ',
         lessMain: ':: Relative to "basePath", where is your main.less file?: '
     }, function( cfg ){
-        log( '::::::::: Saving Configs', false );
+        log( '::::::::: Saving Configs' );
         config.writeFile( config.validateInput( cfg ) );
     });
 } else {
-    console.log( ':: options.isProduction : ' + ( options.isProduction ? 'true' : 'false' ) );
-    console.log( ':: options.port : ' + options.port );
-    console.log( ':: options.basePath : ' + path.join( options.basePath ) );
-    console.log( ':: options.lessSrc : ' + path.join( options.basePath, options.lessSrc ) );
-    console.log( ':: options.lessMain : ' + path.join( options.basePath, options.lessMain ) );
-    console.log( ':: options.jsBuildCfg : ' + path.join( options.basePath, options.jsBuildCfg ) );
+    log( '::::::::: options' );
+    log( ':: isProduction : ' + ( options.isProduction ? 'true' : 'false' ) );
+    log( ':: port : ' + options.port );
+    log( ':: basePath : ' + path.join( options.basePath ) );
+    log( ':: lessSrc : ' + path.join( options.basePath, options.lessSrc ) );
+    log( ':: lessMain : ' + path.join( options.basePath, options.lessMain ) );
+    log( ':: jsBuildCfg : ' + path.join( options.basePath, options.jsBuildCfg ) );
 
     startServer(
         options.port,
