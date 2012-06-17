@@ -88,7 +88,7 @@ var startServer = function( port, root, isProd, lessMain, lessSrc ){
         );
     });
 
-    log( '::::::::: server listenting on port ' + port + ( isProd ? ' [prod mode]' : '' ) + ' (ctrl+c to exit)', true );
+    log( '::::::::: server listening on port ' + port + ( isProd ? ' [prod mode]' : '' ) + ' (ctrl+c to exit)', true );
     if ( parseInt( port, 10 ) < 1024  ){
         log( '::::::::: warning: port ' + port + ' requires root' );
     }
