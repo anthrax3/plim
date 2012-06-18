@@ -19,7 +19,6 @@ var fs = require( 'fs' ),
     config = require( './src/config' ),
     options = config.get();
 
-
 var log = function( msg, showName ){
     msg = msg || '';
 
