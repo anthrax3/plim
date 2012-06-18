@@ -20,7 +20,7 @@
 		"node": "0.6"
 	},
 	"dependencies": {
-		"requirejs" : "1.x",
+		"requirejs" : "2.x",
 		"commander" : "0.x",
 		"express" : "2.x",
 		"less" : "1.x"
