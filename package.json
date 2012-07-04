@@ -1,5 +1,5 @@
 {
-    "name": "Plim",
+    "name": "plim",
     "version": "0.0.5",
     "author": "Matthew Mirande <itsbusticated@gmail.com>",
     "description": "Simple front-end development sandbox supporting static file serving as well as LESS & AMD js compilation",
