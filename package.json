@@ -1,29 +1,28 @@
 {
-	"author": "Matthew Mirande <mattmirande@cheezburger.com>",
-	"name": "Plim",
-	"description": "Simple sandbox to support static file serving as well as LESS & AMD js compilation",
-	"version": "0.0.5",
-	"bin": {
-		"plim": "./plim.js"
-	},
-	"scripts": {
-		"start": "node plim.js"
-	},
-	"files": [
-		"plims.js"
-	],
-	"repository": {
-		"url": ""
-	},
-	"main": "app.js",
-	"engines": {
-		"node": "0.6"
-	},
-	"dependencies": {
-		"requirejs" : "2.x",
-		"commander" : "0.x",
-		"express" : "2.x",
-		"less" : "1.x"
-	},
-	"devDependencies": {}
+    "name": "Plim",
+    "version": "0.0.5",
+    "author": "Matthew Mirande <itsbusticated@gmail.com>",
+    "description": "Simple front-end development sandbox supporting static file serving as well as LESS & AMD js compilation",
+    "homepage": "http://busticated.co/",
+    "bugs": "https://github.com/busticated/plim/issues",
+    "bin": {
+        "plim": "./plim.js"
+    },
+    "scripts": {
+        "start": "node plim.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/busticated/plim/"
+    },
+    "engines": {
+        "node": ">=0.6.0"
+    },
+    "dependencies": {
+        "requirejs" : "2.x",
+        "commander" : "0.x",
+        "express" : "2.x",
+        "less" : "1.x"
+    },
+    "devDependencies": {}
 }

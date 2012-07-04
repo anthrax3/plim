@@ -5,3 +5,9 @@
      \/   \____/\____/\/    \/
 
 ---
+Simple front-end development sandbox supporting static file serving as well as LESS & AMD js compilation
+
+**Installation:**
+
+1. npm install -g plim 
+2. plim -h 
